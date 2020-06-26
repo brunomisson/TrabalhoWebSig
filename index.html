@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<body>
+	<IMG align="left" src = "imagens/logo_ulisboa.png"  height="70">
+	<IMG align="right"src = "imagens/igot.png"  height="70">
+</body>
+
+<body>
+	<BR><BR><BR><BR>
+	<div align = "center">
+		<P>
+			
+			<b>Casos de COVID-19 em Portugal</b>
+			<BR><i>Concelhos & Distritos</i>
+			
+		</P>
+	</div>
+	<BR> 
+</body>
+
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>Evolução de Casos de COVID 19 em Portugal</title>
+
+        <link rel="stylesheet" href="css/leaflet.css" >
+
+        <script src="js/leaflet.js" ></script>
+
+        <script type="text/javascript" src="dados/casoscovid.geojson"></script>
+		
+		<!-- ESTILO PARA DEFINIR A LEGENDA -->
+        <style>
+          /* Optional: adjust the values below to change the appearance of the legend */
+          .legend {
+              padding: 6px 8px;
+              line-height: 18px;
+              background: rgba(255,255,255,0.9);
+              box-shadow: 0 0 15px rgba(0,0,0,0.2);
+              border-radius: 5px;
+          }
+
+           /* Optional: adjust the values below to change the appearance of the legend color boxes */
+           .legend i {
+              width: 18px;
+              height: 18px;
+              float: left;
+              margin-right: 8px;
+              opacity: 0.7;
+          }
+        </style>
+
+    </head>
+
+    <body>
+        <div id="map" style="height: 500px; width:1000px; position: absolute; left:170px; top: 150px"></div>
+        <script type="text/javascript">
+
+        var map = L.map('map', {
+            center: [39.7515732,-7.164148],
+            zoom: 6	
+        });
+		<!-- layer de base -->
+        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+            attribution: 'Map data © OpenStreetMap contributors, CC-BY-SA, Imagery © Mapbox',
+           
+            id: 'mapbox.light',
+            accessToken: 'pk.eyJ1IjoiY3VyZW1hbmdvIiwiYSI6ImNpcTQ4cGFwbDAxbmVmd25vZGNiOTVzeGEifQ.GWZByYkIft6eMRha69C8nw'
+        }).addTo(map);
+
+        
+		function getColor(value) {
+            return  value == 0     ? '#ffffff':
+					value <= 5.0   ? '#ffe0cc':
+                    value <= 10.0  ? '#ffd1b3':
+                    value <= 15.0  ? '#ffc299':
+                    value <= 20.0  ? '#ffb380':
+                    value <= 25.0  ? '#ffa366':
+					value <= 30.0  ? '#ff944d':
+					value <= 35.0  ? '#ff751a':
+					value <= 40.0  ? '#ff6600':
+					value <= 45.0  ? '#e65c00':
+					value <= 50.0  ? '#cc5200':
+					                 '#993d00';
+        }
+
+        function st_marco(ft_marco){
+            return {
+                fillColor: getColor(ft_marco.properties.marco),   // pop_den is the field name for the population density data
+                weight: 0.5,
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.9
+            };}
+		
+		function highlightFeature(e) {
+            // Get access to the feature that was hovered through e.target
+            var ft_marco = e.target;
+            // Set a thick grey border on the feature when as mouseover effect
+            // Adjust the values below to change the highlighting styles of features on mouseover
+            // Check out https://leafletjs.com/reference-1.3.4.html#path for more options for changing style
+            ft_marco.setStyle({
+                weight: 5,
+                color: 'yellow',
+				dashArray: '',
+                fillOpacity: 0.7
+            });
+			// Bring the highlighted feature to front so that the border doesn’t clash with nearby states
+            // But not for IE, Opera or Edge, since they have problems doing bringToFront on mouseover
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                ft_marco.bringToFront();
+            }}
+        
+			
+        <!-- cria variavel com o nome geojson -->
+		var gj_marco; // define a variable to make the geojson layer accessible for the funtion to use   
+            
+        function resetHighlight(e) {gj_marco.resetStyle(e.target);}
+        function zoomToFeature(e) {map.fitBounds(e.target.getBounds());}
+		
+        function onEachFeature(feature, layer) {layer.on({
+                mouseover: highlightFeature, // Do what defined by the highlightFeature function on mouseover
+                mouseout: resetHighlight,click: zoomToFeature// Do what defined by the resetHighlight function on mouseout
+            });}
+        
+		<!-- precisa entrar no dado geojson do arquivo e criar um nome para ele, no caso, "data" -->
+		<!-- FUNÇÃO PARA APRESENTAR OS VALORES NO MAPA, CONCELHO E CASOS-->
+        gj_marco = L.geoJson(data, {
+            style:st_marco,onEachFeature: onEachFeature}).bindTooltip(function (layer){
+            return layer.feature.properties.Concelho +
+			'<p style="color:red"> Casos de COVID*/10.000 hab <BR> Março: ' + layer.feature.properties.marco.toString() + 
+			'<BR> Abril: ' + layer.feature.properties.abril.toString() +
+			'<BR> Maio: ' + layer.feature.properties.maio.toString() +
+			'<P><FONT SIZE="1">*Referência dia 26 de cada mês</FONT></p>';}).addTo(map);
+		
+		
+		
+		<!-- layer 2 CASOS EM ABRIL --!>
+		
+		function st_abril(ft_abril){return {fillColor: getColor(ft_abril.properties.abril),
+		weight: 0.5, opacity: 1,color: 'black',fillOpacity: 0.9};}
+		
+		function highlightFeature2(m) {
+            var ft_abril = m.target;
+            ft_abril.setStyle({
+                weight: 5,
+                color: 'blue',
+				dashArray: '',
+                fillOpacity: 0.7});            
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                ft_abril.bringToFront();
+            }
+        }
+        
+		var gj_abril;             
+        function resetHighlight2(m) {gj_abril.resetStyle(m.target);}
+        function zoomToFeature2(m) {map.fitBounds(m.target.getBounds());}
+		
+        function onEachFeature2(feature, layer) {layer.on({
+                mouseover: highlightFeature2, mouseout: resetHighlight2,click: zoomToFeature2});}
+        
+		<!-- precisa entrar no dado geojson2 do arquivo e criar um nome para ele, no caso, "data" -->
+		<!-- FUNÇÃO PARA APRESENTAR OS VALORES NO MAPA, CONCELHO E CASOS-->
+        gj_abril = L.geoJson(data, {style:st_abril, onEachFeature: onEachFeature2}).bindTooltip(function (layer){
+            return layer.feature.properties.Concelho +
+			'<p style="color:red"> Casos de COVID*/10.000 hab <BR> Março: ' + layer.feature.properties.marco.toString() + 
+			'<BR> Abril: ' + layer.feature.properties.abril.toString() +
+			'<BR> Maio: ' + layer.feature.properties.maio.toString() +
+			'<P><FONT SIZE="1">*Referência dia 26 de cada mês</FONT></p>';}).addTo(map);
+
+		<!-- LAYER 3 CASOS MAIO --!>
+		<!-- layer 2 CASOS EM ABRIL --!>
+		
+		function st_maio(ft_maio){return {fillColor: getColor(ft_maio.properties.maio),
+		weight: 0.5, opacity: 1,color: 'black',fillOpacity: 0.9};}
+		
+		function highlightFeature3(m) {
+            var ft_maio = m.target;
+            ft_maio.setStyle({
+                weight: 5,
+                color: 'red',
+				dashArray: '',
+                fillOpacity: 0.7});            
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                ft_maio.bringToFront();
+            }
+        }
+        
+		var gj_maio;             
+        function resetHighlight3(m) {gj_maio.resetStyle(m.target);}
+        function zoomToFeature3(m) {map.fitBounds(m.target.getBounds());}
+		
+        function onEachFeature3(feature, layer) {layer.on({
+                mouseover: highlightFeature3, mouseout: resetHighlight3,click: zoomToFeature3});}
+        
+		<!-- precisa entrar no dado geojson2 do arquivo e criar um nome para ele, no caso, "data" -->
+		<!-- FUNÇÃO PARA APRESENTAR OS VALORES NO MAPA, CONCELHO E CASOS-->
+        gj_maio = L.geoJson(data, {style:st_maio, onEachFeature: onEachFeature3}).bindTooltip(function (layer){
+            return layer.feature.properties.Concelho +
+			'<p style="color:red"> Casos de COVID*/10.000 hab <BR> Março: ' + layer.feature.properties.marco.toString() + 
+			'<BR> Abril: ' + layer.feature.properties.abril.toString() +
+			'<BR> Maio: ' + layer.feature.properties.maio.toString() +
+			'<P><FONT SIZE="1">*Referência dia 26 de cada mês</FONT></p>';}).addTo(map);
+		
+		
+		
+		<!-- DISTRITOS --!>
+		<!-- MARÇO --!>
+		function st_dt_marco(ft_dt_marco){
+            return {
+                fillColor: getColor(ft_dt_marco.properties.marco),   // pop_den is the field name for the population density data
+                weight: 0.5,
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.9
+            };}
+		
+		function highlightFeature4(e) {
+            // Get access to the feature that was hovered through e.target
+            var ft_dt_marco = e.target;
+            // Set a thick grey border on the feature when as mouseover effect
+            // Adjust the values below to change the highlighting styles of features on mouseover
+            // Check out https://leafletjs.com/reference-1.3.4.html#path for more options for changing style
+            ft_dt_marco.setStyle({
+                weight: 5,
+                color: '#99004d',
+				dashArray: '',
+                fillOpacity: 0.7
+            });
+			// Bring the highlighted feature to front so that the border doesn’t clash with nearby states
+            // But not for IE, Opera or Edge, since they have problems doing bringToFront on mouseover
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                ft_dt_marco.bringToFront();
+            }}
+        
+			
+        <!-- cria variavel com o nome geojson -->
+		var gj_dt_marco; // define a variable to make the geojson layer accessible for the funtion to use   
+            
+        function resetHighlight4(e) {gj_dt_marco.resetStyle(e.target);}
+        function zoomToFeature4(e) {map.fitBounds(e.target.getBounds());}
+		
+        function onEachFeature4(feature, layer) {layer.on({
+                mouseover: highlightFeature4, // Do what defined by the highlightFeature function on mouseover
+                mouseout: resetHighlight4,click: zoomToFeature4// Do what defined by the resetHighlight function on mouseout
+            });}
+        
+		<!-- precisa entrar no dado geojson do arquivo e criar um nome para ele, no caso, "data" -->
+		<!-- FUNÇÃO PARA APRESENTAR OS VALORES NO MAPA, CONCELHO E CASOS-->
+        gj_dt_marco = L.geoJson(distrito, {
+            style:st_dt_marco,onEachFeature: onEachFeature4}).bindTooltip(function (layer){
+            return layer.feature.properties.Distrito +
+			'<p style="color:red"> Casos de COVID*/10.000 hab <BR> Março: ' + layer.feature.properties.marco.toString() + 
+			'<BR> Abril: ' + layer.feature.properties.abril.toString() +
+			'<BR> Maio: ' + layer.feature.properties.maio.toString() +
+			'<P><FONT SIZE="1">*Referência dia 26 de cada mês</FONT></p>';}).addTo(map);
+		
+		
+		<!-- ABRIL --!>
+		function st_dt_abril(ft_dt_abril){
+            return {
+                fillColor: getColor(ft_dt_abril.properties.abril),   // pop_den is the field name for the population density data
+                weight: 0.5,
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.9
+            };}
+		
+		function highlightFeature4(e) {
+            // Get access to the feature that was hovered through e.target
+            var ft_dt_abril = e.target;
+            // Set a thick grey border on the feature when as mouseover effect
+            // Adjust the values below to change the highlighting styles of features on mouseover
+            // Check out https://leafletjs.com/reference-1.3.4.html#path for more options for changing style
+            ft_dt_abril.setStyle({
+                weight: 5,
+                color: '#99004d',
+				dashArray: '',
+                fillOpacity: 0.7
+            });
+			// Bring the highlighted feature to front so that the border doesn’t clash with nearby states
+            // But not for IE, Opera or Edge, since they have problems doing bringToFront on mouseover
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                ft_dt_abril.bringToFront();
+            }}
+        
+			
+        <!-- cria variavel com o nome geojson -->
+		var gj_dt_abril; // define a variable to make the geojson layer accessible for the funtion to use   
+            
+        function resetHighlight4(e) {gj_dt_abril.resetStyle(e.target);}
+        function zoomToFeature4(e) {map.fitBounds(e.target.getBounds());}
+		
+        function onEachFeature4(feature, layer) {layer.on({
+                mouseover: highlightFeature4, // Do what defined by the highlightFeature function on mouseover
+                mouseout: resetHighlight4,click: zoomToFeature4// Do what defined by the resetHighlight function on mouseout
+            });}
+        
+		<!-- precisa entrar no dado geojson do arquivo e criar um nome para ele, no caso, "data" -->
+		<!-- FUNÇÃO PARA APRESENTAR OS VALORES NO MAPA, CONCELHO E CASOS-->
+        gj_dt_abril = L.geoJson(distrito, {
+            style:st_dt_abril,onEachFeature: onEachFeature4}).bindTooltip(function (layer){
+            return layer.feature.properties.Distrito +
+			'<p style="color:red"> Casos de COVID*/10.000 hab <BR> Março: ' + layer.feature.properties.marco.toString() + 
+			'<BR> Abril: ' + layer.feature.properties.abril.toString() +
+			'<BR> Maio: ' + layer.feature.properties.maio.toString() +
+			'<P><FONT SIZE="1">*Referência dia 26 de cada mês</FONT></p>';}).addTo(map);
+		
+		<!-- MAIO --!> 
+		
+		function st_dt_maio(ft_dt_maio){
+            return {
+                fillColor: getColor(ft_dt_maio.properties.maio),   // pop_den is the field name for the population density data
+                weight: 0.5,
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.9
+            };}
+		
+		function highlightFeature4(e) {
+            // Get access to the feature that was hovered through e.target
+            var ft_dt_maio = e.target;
+            // Set a thick grey border on the feature when as mouseover effect
+            // Adjust the values below to change the highlighting styles of features on mouseover
+            // Check out https://leafletjs.com/reference-1.3.4.html#path for more options for changing style
+            ft_dt_maio.setStyle({
+                weight: 5,
+                color: '#99004d',
+				dashArray: '',
+                fillOpacity: 0.7
+            });
+			// Bring the highlighted feature to front so that the border doesn’t clash with nearby states
+            // But not for IE, Opera or Edge, since they have problems doing bringToFront on mouseover
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                ft_dt_maio.bringToFront();
+            }}
+        
+			
+        <!-- cria variavel com o nome geojson -->
+		var gj_dt_maio; // define a variable to make the geojson layer accessible for the funtion to use   
+            
+        function resetHighlight4(e) {gj_dt_maio.resetStyle(e.target);}
+        function zoomToFeature4(e) {map.fitBounds(e.target.getBounds());}
+		
+        function onEachFeature4(feature, layer) {layer.on({
+                mouseover: highlightFeature4, // Do what defined by the highlightFeature function on mouseover
+                mouseout: resetHighlight4,click: zoomToFeature4// Do what defined by the resetHighlight function on mouseout
+            });}
+        
+		<!-- precisa entrar no dado geojson do arquivo e criar um nome para ele, no caso, "data" -->
+		<!-- FUNÇÃO PARA APRESENTAR OS VALORES NO MAPA, CONCELHO E CASOS-->
+        gj_dt_maio = L.geoJson(distrito, {
+            style:st_dt_maio,onEachFeature: onEachFeature4}).bindTooltip(function (layer){
+            return layer.feature.properties.Distrito +
+			'<p style="color:red"> Casos de COVID*/10.000 hab <BR> Março: ' + layer.feature.properties.marco.toString() + 
+			'<BR> Abril: ' + layer.feature.properties.abril.toString() +
+			'<BR> Maio: ' + layer.feature.properties.maio.toString() +
+			'<P><FONT SIZE="1">*Referência dia 26 de cada mês</FONT></p>';}).addTo(map);
+		
+		
+		<!-- DEFINIR A JANELA QUE SELECIONA O LAYER --!>
+		 
+		var Concelho = {'Concelhos Março': gj_marco, 'Concelhos Abril': gj_abril, 'Concelhos Maio': gj_maio, 'Distrtitos Março': gj_dt_marco,
+		'Distritos Abril': gj_dt_abril, 'Distritos Maio': gj_dt_maio};
+		
+		L.control.layers(null, Concelho).addTo(map);
+
+
+
+        
+		var legend = L.control({position: 'bottomright'}); // Try the other three corners if you like.
+
+        legend.onAdd = function (map) {
+
+            var div = L.DomUtil.create('div', 'legend'),
+                grades = [0, 5 , 10, 15, 20, 25, 30, 35, 40, 45, 50],
+				labels = []; // The break values to define the intervals of population, note we begin from 0 here
+
+            div.innerHTML = '<b>Casos COVID/10.000 hab <br><br></b>'; // The legend title, in this case it's Population Density 2011
+
+            // Loop through our the classes and generate a label with a colored square for each interval.
+            // If you are creating a similar choropleth map, you do not need to change lines below.
+            for (var i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                '<i style="background:' + getColor(grades[i] + 1) + '"></i>' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+            }
+
+            return div;
+        };
+
+        legend.addTo(map);
+
+        </script>
+   
+
+</body>
+
+<body>
+
+	<div align = "bottom">
+		<P><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+		
+			<FONT SIZE = "0.5"
+			<b>Universidade de Lisboa</b>
+			<BR>Instituto de Geografia e Ordenamento do Território - IGOT
+			<BR>Disciplina: WebSIG
+			<BR>Professor: Nelson Mileu
+			<BR>Aluno: Bruno Misson
+			</FONT>
+		</P>
+	</div>
+	<BR> 
+</body></html>
